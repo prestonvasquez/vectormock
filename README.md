@@ -7,7 +7,7 @@ const openAiAda002Dim = 1536
 emb := mockvector.NewDotProduct(openAiAda002Dim)
 
 emb.MockDocuments(
-  vectormock.Document{PageContent: "Gabriel García Márquez", Score: 0.80},
+  	vectormock.Document{PageContent: "Gabriel García Márquez", Score: 0.80},
 	vectormock.Document{PageContent: "Gabriela Mistral", Score: 0.67},
 	vectormock.Document{PageContent: "Miguel de Cervantes", Score: 0.09})
 
