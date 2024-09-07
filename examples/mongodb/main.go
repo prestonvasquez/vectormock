@@ -13,8 +13,8 @@ import (
 )
 
 // This test requires the URI to point to a MongoDB Atlas Cluster. It also
-// requires that a "vdb" and "vstore" database and collection exist with the
-// following vector search index:
+// requires that a "langchaingo-test" and "vstore" database and collection exist
+// with the following vector search index:
 //
 //{
 //  "fields": [{
@@ -28,6 +28,12 @@ import (
 // For more information on MongoDB Vector Databases, see this tutorial:
 // https://www.mongodb.com/docs/atlas/atlas-vector-search/tutorials/vector-search-quick-start/
 
+const (
+	testDB          = "langchaingo-test"
+	testColl        = "vstore"
+	testIndexDP1536 = "vector_index_dotProduct_1536"
+)
+
 func main() {
 	uri := os.Getenv("MONGODB_URI")
 	if uri == "" {
@@ -40,7 +46,7 @@ func main() {
 		log.Fatalf("failed to connect to MongoDB: %v", err)
 	}
 
-	coll := client.Database("vdb").Collection("vstore")
+	coll := client.Database(testDB).Collection(testColl)
 
 	// Create the mock emedder.
 	emb := vectormock.NewDotProduct(1536)
@@ -56,7 +62,7 @@ func main() {
 	// Use LangChainGo to store the vectors in MongoDB. You do not need to use
 	// LangChainGo to mock an embedding, this is just a conveniecne for the sake
 	// of this example.
-	store := mongovector.New(*coll, emb, nil)
+	store := mongovector.New(*coll, emb, mongovector.WithIndex(testIndexDP1536))
 
 	// conver mockDocs to schema.Document
 	schemaDocs := make([]schema.Document, len(mockDocs))
