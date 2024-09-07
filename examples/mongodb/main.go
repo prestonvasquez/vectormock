@@ -4,10 +4,12 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/prestonvasquez/vectormock"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores/mongovector"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -29,9 +31,9 @@ import (
 // https://www.mongodb.com/docs/atlas/atlas-vector-search/tutorials/vector-search-quick-start/
 
 const (
-	testDB          = "langchaingo-test"
-	testColl        = "vstore"
-	testIndexDP1536 = "vector_index_dotProduct_1536"
+	testDB       = "langchaingo-test"
+	testColl     = "vstore"
+	testIndexDP3 = "vector_index_dotProduct_3"
 )
 
 func main() {
@@ -46,10 +48,17 @@ func main() {
 		log.Fatalf("failed to connect to MongoDB: %v", err)
 	}
 
+	defer func() { _ = client.Disconnect(context.Background()) }()
+
 	coll := client.Database(testDB).Collection(testColl)
 
+	// Clear existing data for completeness.
+	if _, err := coll.DeleteMany(context.Background(), bson.D{}); err != nil {
+		panic(err)
+	}
+
 	// Create the mock emedder.
-	emb := vectormock.NewDotProduct(1536)
+	emb := vectormock.NewDotProduct(3)
 
 	mockDocs := []vectormock.Document{
 		{PageContent: "Gabriel García Márquez", Score: 0.80},
@@ -62,7 +71,7 @@ func main() {
 	// Use LangChainGo to store the vectors in MongoDB. You do not need to use
 	// LangChainGo to mock an embedding, this is just a conveniecne for the sake
 	// of this example.
-	store := mongovector.New(*coll, emb, mongovector.WithIndex(testIndexDP1536))
+	store := mongovector.New(*coll, emb, mongovector.WithIndex(testIndexDP3))
 
 	// conver mockDocs to schema.Document
 	schemaDocs := make([]schema.Document, len(mockDocs))
@@ -74,10 +83,19 @@ func main() {
 	}
 
 	_, err = store.AddDocuments(context.Background(), schemaDocs)
+	if err != nil {
+		panic(err)
+	}
+
+	// Consistency on indexes is not synchronous.
+	time.Sleep(1 * time.Second)
 
 	// Perform a simlarity search. Note that the actual query doesn't matter at
 	// all. The mock handles returning the embedded query vector.
-	results, err := store.SimilaritySearch(context.Background(), "Latin Authors", 10)
+	results, err := store.SimilaritySearch(context.Background(), "Latin Authors", 3)
+	if err != nil {
+		panic(err)
+	}
 
 	for _, res := range results {
 		log.Printf("PageContent: %s, Score: %.2f", res.PageContent, res.Score)

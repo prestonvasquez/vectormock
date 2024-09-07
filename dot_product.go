@@ -16,6 +16,8 @@ type DotProduct struct {
 func NewDotProduct(dim int) *DotProduct {
 	return &DotProduct{
 		queryVector: newNormalizedVector(dim),
+		docs:        make(map[string]Document),
+		docVectors:  make(map[string][]float32),
 	}
 }
 
