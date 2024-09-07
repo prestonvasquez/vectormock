@@ -11,6 +11,7 @@ emb.MockDocuments(
 	vectormock.Document{PageContent: "Gabriela Mistral", Score: 0.67},
 	vectormock.Document{PageContent: "Miguel de Cervantes", Score: 0.09})
 
+// LangChainGo similarity search, for example.
 results, _ := store.SimilaritySearch(context.Background(), "Latin Authors", 3)
 
 for _, res := range results {
