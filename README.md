@@ -23,5 +23,5 @@ for _, res := range results {
 // 2024/09/06 22:33:48 PageContent: Miguel de Cervantes, Score: 0.09
 ```
 
-For full example see [here](example/mongodb/main.go).
+For full example see [here](examples/mongodb/main.go).
 
