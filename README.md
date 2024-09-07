@@ -4,7 +4,7 @@ This library is for mocking an embedding model based on similarity scores. The i
 
 ```go
 const openAiAda002Dim = 1536
-emb := mockvector.NewDotProduct(openAiAda002Dim)
+emb := mockvector.NewDotProduct(openAiAda002Dim) // query vector generated under the hood
 
 emb.MockDocuments(
   	vectormock.Document{PageContent: "Gabriel García Márquez", Score: 0.80},
