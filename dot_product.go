@@ -10,14 +10,52 @@ type DotProduct struct {
 	queryVector []float32
 	docs        map[string]Document
 	docVectors  map[string][]float32
+	normFn      DotProductNormFn
+}
+
+// DotProductNormFn is a function that will return a new vector
+type DotProductNormFn func(S float32, qvector, basis []float32) []float32
+
+// DefaultDotProductNormFn will return a new vector such that v1 * v2 = 2S - 1.
+func DefaultDotProductNormFn(S float32, qvector, basis []float32) []float32 {
+	var sum float32
+
+	// Populate v2 upto dim-1.
+	for i := 0; i < len(qvector)-1; i++ {
+		sum += qvector[i] * basis[i]
+	}
+
+	// Calculate v_{2, dim} such that v1 * v2 = 2S - 1:
+	basis[len(basis)-1] = (2*S - 1 - sum) / qvector[len(qvector)-1]
+
+	// If the vectors are linearly independent, regenerate the dim-1 elements
+	// of v2.
+	if !linearlyIndependent(qvector, basis) {
+		return DefaultDotProductNormFn(S, qvector, basis)
+	}
+
+	return basis
 }
 
 // NewDotProduct will return a new DotProduct embedder with the given dimension.
+// The default norm function is vk * v = 2S - 1.
 func NewDotProduct(dim int) *DotProduct {
 	return &DotProduct{
 		queryVector: newNormalizedVector(dim),
 		docs:        make(map[string]Document),
 		docVectors:  make(map[string][]float32),
+		normFn:      DefaultDotProductNormFn,
+	}
+}
+
+// NewDotProductWithNormFn will return a new DotProduct embedder with the given
+// dimension and norm function.
+func NewDotProductWithNormFn(dim int, fn DotProductNormFn) *DotProduct {
+	return &DotProduct{
+		queryVector: newNormalizedVector(dim),
+		docs:        make(map[string]Document),
+		docVectors:  make(map[string][]float32),
+		normFn:      fn,
 	}
 }
 
@@ -65,7 +103,7 @@ func (emb *DotProduct) EmbedDocuments(ctx context.Context, texts []string) ([][]
 		newVectorBasis := newOrthogonalVector(len(emb.queryVector), emb.existingVectors()...)
 
 		// Update the newVector to be scaled by the score.
-		newVector := newScoreVector(doc.Score, emb.queryVector, newVectorBasis)
+		newVector := emb.normFn(doc.Score, emb.queryVector, newVectorBasis)
 
 		vectors[i] = newVector
 		emb.docVectors[texts[i]] = newVector

@@ -95,24 +95,3 @@ func linearlyIndependent(v1, v2 []float32) bool {
 
 	return false
 }
-
-// Update the basis vector such that qvector * basis = 2S - 1.
-func newScoreVector(S float32, qvector []float32, basis []float32) []float32 {
-	var sum float32
-
-	// Populate v2 upto dim-1.
-	for i := 0; i < len(qvector)-1; i++ {
-		sum += qvector[i] * basis[i]
-	}
-
-	// Calculate v_{2, dim} such that v1 * v2 = 2S - 1:
-	basis[len(basis)-1] = (2*S - 1 - sum) / qvector[len(qvector)-1]
-
-	// If the vectors are linearly independent, regenerate the dim-1 elements
-	// of v2.
-	if !linearlyIndependent(qvector, basis) {
-		return newScoreVector(S, qvector, basis)
-	}
-
-	return basis
-}
