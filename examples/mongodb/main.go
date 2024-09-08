@@ -9,13 +9,13 @@ import (
 	"github.com/prestonvasquez/vectormock"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores/mongovector"
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // This test requires the URI to point to a MongoDB Atlas Cluster. It also
-// requires that a "langchaingo-test" and "vstore" database and collection exist
+// requires that a "langchaingo-test" database and "vstore" collection exist
 // with the following vector search index:
 //
 //{
@@ -43,7 +43,7 @@ func main() {
 	}
 
 	// Connect to MongoDB.
-	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 	if err != nil {
 		log.Fatalf("failed to connect to MongoDB: %v", err)
 	}
@@ -57,7 +57,7 @@ func main() {
 		panic(err)
 	}
 
-	// Create the mock emedder.
+	// Create the mock embedder.
 	emb := vectormock.NewDotProduct(3)
 
 	mockDocs := []vectormock.Document{
@@ -69,11 +69,11 @@ func main() {
 	emb.MockDocuments(mockDocs...)
 
 	// Use LangChainGo to store the vectors in MongoDB. You do not need to use
-	// LangChainGo to mock an embedding, this is just a conveniecne for the sake
+	// LangChainGo to mock an embedding, this is just a convenience for the sake
 	// of this example.
 	store := mongovector.New(*coll, emb, mongovector.WithIndex(testIndexDP3))
 
-	// conver mockDocs to schema.Document
+	// Convert mockDocs to schema.Document
 	schemaDocs := make([]schema.Document, len(mockDocs))
 	for i := range mockDocs {
 		schemaDocs[i] = schema.Document{
@@ -90,7 +90,7 @@ func main() {
 	// Consistency on indexes is not synchronous.
 	time.Sleep(1 * time.Second)
 
-	// Perform a simlarity search. Note that the actual query doesn't matter at
+	// Perform a similarity search. Note that the actual query doesn't matter at
 	// all. The mock handles returning the embedded query vector.
 	results, err := store.SimilaritySearch(context.Background(), "Latin Authors", 3)
 	if err != nil {
