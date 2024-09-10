@@ -1,6 +1,6 @@
 # vectormock
 
-This library is for mocking an embedding model based on similarity scores. The idea is to embed data with a relative similarity score to a root query vector. 
+This package is for mocking an embedding model based on similarity scores. The idea is to embed data with a relative similarity score to a root query vector. 
 
 ```go
 const openAiAda002Dim = 1536
